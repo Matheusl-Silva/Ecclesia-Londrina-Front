@@ -89,42 +89,6 @@
   --blue-dark: 217 60% 25%;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: 220 30% 8%;
-    --foreground: 220 15% 90%;
-    --card: 220 25% 12%;
-    --card-foreground: 220 15% 90%;
-    --popover: 220 25% 12%;
-    --popover-foreground: 220 15% 90%;
-    --primary: 217 91% 55%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 20% 18%;
-    --secondary-foreground: 220 15% 85%;
-    --muted: 220 20% 15%;
-    --muted-foreground: 220 10% 55%;
-    --accent: 43 72% 55%;
-    --accent-foreground: 30 50% 95%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 220 20% 20%;
-    --input: 220 20% 20%;
-    --ring: 217 91% 55%;
-    --sidebar-background: 220 30% 8%;
-    --sidebar-foreground: 220 15% 90%;
-    --sidebar-primary: 217 91% 55%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 20% 15%;
-    --sidebar-accent-foreground: 220 15% 90%;
-    --sidebar-border: 220 20% 20%;
-    --sidebar-ring: 217 91% 59.8%;
-    --gold: 43 72% 55%;
-    --gold-light: 43 30% 20%;
-    --blue-light: 217 40% 15%;
-    --blue-dark: 217 60% 75%;
-  }
-}
-
 body {
   background-color: var(--color-background);
   color: var(--color-foreground);
