@@ -18,14 +18,7 @@ const ROLES = [
   { value: "admin", label: "Administrador" },
 ];
 
-const MOCK_CHURCHES = [
-  { id: 1, name: "Catedral Metropolitana de Londrina" },
-  { id: 2, name: "Paróquia São José" },
-  { id: 3, name: "Paróquia Nossa Senhora de Fátima" },
-  { id: 4, name: "Paróquia Santa Cruz" },
-];
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:6543";
 
 const CadastroPessoa = () => {
   const router = useRouter();
@@ -37,15 +30,13 @@ const CadastroPessoa = () => {
   const [role, setRole] = useState("");
   const [churchId, setChurchId] = useState("");
 
-  const [churches, setChurches] = useState<{ id: number; name: string }[]>(MOCK_CHURCHES);
+  const [churches, setChurches] = useState<{ id: number; name: string }[]>([]);
 
   useEffect(() => {
-    fetch(`${API_URL}/church`)
+    fetch(`${API_URL}/church/find`)
       .then((res) => res.json())
       .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setChurches(data); // Usa os dados do banco só se tiver paróquias cadastradas
-        }
+        setChurches(data);
       })
       .catch((err) => console.error("Failed to fetch churches:", err));
   }, []);
@@ -83,10 +74,8 @@ const CadastroPessoa = () => {
 
       toast({
         title: "Pessoa cadastrada!",
-        description: `"${name}" foi registrada com sucesso.`,
+        description: `O usuário(a) "${name}" foi registrado com sucesso.`,
       });
-
-      alert(`O usuário(a) ${name} foi cadastrado com sucesso!`);
 
       // Limpa formulário
       setName("");
