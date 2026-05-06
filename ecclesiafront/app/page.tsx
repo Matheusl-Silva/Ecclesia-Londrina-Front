@@ -1,14 +1,15 @@
 "use client"
 
-import { useState, useMemo } from "react";
-import Header from "@/components/Header";
-import SearchBar from "@/components/SearchBar";
+import logo from "@/assets/logo.png";
 import ChurchCard from "@/components/ChurchCard";
 import ChurchDetailModal from "@/components/ChurchDetailModal";
-import { churches, type Church } from "@/data/churches";
-import logo from "@/assets/logo.png";
+import Header from "@/components/Header";
+import SearchBar from "@/components/SearchBar";
+import { type Church, type ChurchList } from "./page.models";
+import { useMemo, useState } from "react";
+import { loadChurches } from "./page.controller";
 
-const Index = () => {
+const Index = async () => {
   const [search, setSearch] = useState("");
   const [bairro, setBairro] = useState("todos");
   const [selectedChurch, setSelectedChurch] = useState<Church | null>(null);
@@ -16,14 +17,16 @@ const Index = () => {
   const filtered = useMemo(() => {
     const term = search.toLowerCase().trim();
     return churches.filter((c) => {
-      const matchesBairro = bairro === "todos" || c.bairro === bairro;
+      const matchesBairro = bairro === "todos" || c.neighborhood === bairro;
       const matchesSearch =
         !term ||
-        c.nome.toLowerCase().includes(term) ||
-        c.bairro.toLowerCase().includes(term);
+        c.name.toLowerCase().includes(term) ||
+        c.neighborhood.toLowerCase().includes(term);
       return matchesBairro && matchesSearch;
     });
   }, [search, bairro]);
+
+  const churches = await loadChurches({});
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
@@ -33,6 +36,7 @@ const Index = () => {
       <section className="bg-primary text-primary-foreground pt-10 pb-28 px-4 relative overflow-hidden flex-shrink-0">
         <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1548625361-ec853713009a?q=80&w=1200&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay"></div>
         <div className="max-w-[1200px] mx-auto relative z-10 mt-2">
+          {/* {churchesData[0].name} */}
           <SearchBar
             search={search}
             onSearchChange={setSearch}

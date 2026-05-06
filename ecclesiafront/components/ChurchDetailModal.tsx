@@ -1,6 +1,6 @@
 import { X, MapPin, Phone, Mail, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Church } from "@/data/churches";
+import type { Church } from "@/app/page.models";
 
 interface ChurchDetailModalProps {
   church: Church;
@@ -54,7 +54,7 @@ const ChurchDetailModal = ({ church, onClose }: ChurchDetailModalProps) => {
         <div className="relative h-48 sm:h-56 flex-shrink-0 bg-primary overflow-hidden">
           <img 
             src="https://images.unsplash.com/photo-1548625361-ec853713009a?q=80&w=1200&auto=format&fit=crop" 
-            alt={church.nome}
+            alt={church.name}
             className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-60"
           />
           <button
@@ -67,7 +67,7 @@ const ChurchDetailModal = ({ church, onClose }: ChurchDetailModalProps) => {
           <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-8 z-10 bg-gradient-to-t from-primary via-primary/80 to-transparent">
             <span className="text-secondary font-bold text-[10px] sm:text-xs tracking-[0.15em] uppercase mb-1">Catedral Metropolitana</span>
             <h2 className="font-serif text-3xl sm:text-4xl font-semibold text-white leading-tight">
-              {church.nome}
+              {church.name}
             </h2>
           </div>
         </div>
@@ -78,17 +78,17 @@ const ChurchDetailModal = ({ church, onClose }: ChurchDetailModalProps) => {
             
             {/* Left Column: Schedules */}
             <div className="lg:col-span-2">
-              <ScheduleTable title="Missas" items={church.missas} />
+              {/* <ScheduleTable title="Missas" items={church.} /> */}
               
               <div className="grid sm:grid-cols-2 gap-6">
                 <div>
-                  <ScheduleTable title="Confissões" items={church.confissoes} />
+                  {/* <ScheduleTable title="Confissões" items={church.confissoes} /> */}
                 </div>
-                {church.adoracao && church.adoracao.length > 0 && (
+                {/* {church.adoracao && church.adoracao.length > 0 && (
                   <div>
                     <ScheduleTable title="Adoração" items={church.adoracao} />
                   </div>
-                )}
+                )} */}
               </div>
             </div>
 
