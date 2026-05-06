@@ -1,15 +1,15 @@
-import { MapPin } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+
+import type { Church as ChurchType } from "@/services/church/types";
 import { Button } from "@/components/ui/button";
-import type { Church as ChurchType } from "@/app/page.models";
+import { Card, CardContent } from "@/components/ui/card";
+import { MapPin } from "lucide-react";
 
 interface ChurchCardProps {
   church: ChurchType;
-  onSelect: (church: ChurchType) => void;
   index: number;
 }
 
-const ChurchCard = ({ church, onSelect, index }: ChurchCardProps) => {
+const ChurchCard = ({ church, index }: ChurchCardProps) => {
   return (
     <Card
       className="group hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 animate-fade-in border-border/60 overflow-hidden flex flex-col bg-card"
@@ -17,8 +17,8 @@ const ChurchCard = ({ church, onSelect, index }: ChurchCardProps) => {
     >
       <div className="aspect-[4/3] w-full overflow-hidden bg-muted relative">
         {/* Placeholder image that looks like a church */}
-        <img 
-          src="https://images.unsplash.com/photo-1548625361-ec853713009a?q=80&w=600&auto=format&fit=crop" 
+        <img
+          src="https://images.unsplash.com/photo-1548625361-ec853713009a?q=80&w=600&auto=format&fit=crop"
           alt={church.name}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
@@ -37,7 +37,6 @@ const ChurchCard = ({ church, onSelect, index }: ChurchCardProps) => {
         </div>
         <div className="mt-6 pt-5 border-t border-border/40">
           <Button
-            onClick={() => onSelect(church)}
             variant="outline"
             className="w-full h-11 border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground transition-colors uppercase tracking-widest text-xs font-bold"
           >

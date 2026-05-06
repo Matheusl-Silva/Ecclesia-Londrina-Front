@@ -1,0 +1,1 @@
+declare module "@nathanmgalante/n-js-utils";

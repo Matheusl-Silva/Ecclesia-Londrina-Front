@@ -1,6 +1,6 @@
 import { X, MapPin, Phone, Mail, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Church } from "@/app/page.models";
+import type { Church } from "@/services/church/types";
 
 interface ChurchDetailModalProps {
   church: Church;
