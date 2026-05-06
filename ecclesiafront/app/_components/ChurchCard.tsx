@@ -18,7 +18,7 @@ const ChurchCard = ({ church, index }: ChurchCardProps) => {
       <div className="aspect-[4/3] w-full overflow-hidden bg-muted relative">
         {/* Placeholder image that looks like a church */}
         <img
-          src="https://images.unsplash.com/photo-1548625361-ec853713009a?q=80&w=600&auto=format&fit=crop"
+          src={church.logoUrl}
           alt={church.name}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />

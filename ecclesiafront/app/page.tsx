@@ -85,7 +85,7 @@ const Index = async ({ searchParams }: HomePageProps) => {
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {(churches as ChurchList).map((church, i) => (
-              <ChurchCard key={i} church={church} index={i} />
+              <ChurchCard key={church.id} church={church} index={i} />
             ))}
           </div>
         )}
