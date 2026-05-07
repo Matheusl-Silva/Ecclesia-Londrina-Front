@@ -7,8 +7,8 @@ import { Globe, Mail, MapPin, Phone, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import ScheduleTable from "@/components/ScheduleTable";
-import * as MassApi from "@/services/mass/api";
-import { MassList } from "@/services/mass/types";
+import * as ScheduleApi from "@/services/schedule/api";
+import { ScheduleList } from "@/services/schedule/types";
 
 interface ChurchDetailModalProps {
   church: Church;
@@ -16,36 +16,76 @@ interface ChurchDetailModalProps {
 }
 
 
-const cache: Record<number, MassList> = {};
+const massCache: Record<number, ScheduleList> = {};
+const confessionCache: Record<number, ScheduleList> = {};
+const adorationCache: Record<number, ScheduleList> = {};
 
 const ChurchDetailModal = ({ church, onClose }: ChurchDetailModalProps) => {
-  const [massList, setMassList] = useState<MassList>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [massList, setMassList] = useState<ScheduleList>([]);
+  const [confessionList, setConfessionList] = useState<ScheduleList>([]);
+  const [adorationList, setAdorationList] = useState<ScheduleList>([]);
+  const [isMassLoading, setIsMassLoading] = useState(false);
+  const [isConfessionLoading, setIsConfessionLoading] = useState(false);
+  const [isAdorationLoading, setIsAdorationLoading] = useState(false);
 
   useEffect(() => {
-    const fetchMassList = async () => {
-      setIsLoading(true);
-      debounce(`fetchMassList-${church.id}`, async () => {
-        if (cache[church.id]) {
-          setMassList(cache[church.id]);
-          setIsLoading(false);
-          return;
-        }
-
+    debounce(`loadChurchDetails-${church.id}`, async () => {
+      const loadMass = async () => {
+        setIsMassLoading(true);
         try {
-          const response = await MassApi.getMassByChurchId(church.id);
+          if (massCache[church.id]) {
+            setMassList(massCache[church.id]);
+            return;
+          }
+          const response = await ScheduleApi.getMassByChurchId(church.id);
           const data = await response.json();
-          cache[church.id] = data
+          massCache[church.id] = data
           setMassList(data);
         } catch (error) {
           setMassList([]);
         } finally {
-          setIsLoading(false);
+          setIsMassLoading(false);
         }
-      });
-    };
+      }
 
-    fetchMassList();
+      const loadConfession = async () => {
+        setIsConfessionLoading(true);
+        try {
+          if (confessionCache[church.id]) {
+            setConfessionList(confessionCache[church.id]);
+            return;
+          }
+          const response = await ScheduleApi.getConfessionByChurchId(church.id);
+          const data = await response.json();
+          confessionCache[church.id] = data
+          setConfessionList(data);
+        } catch (error) {
+          setConfessionList([]);
+        } finally {
+          setIsConfessionLoading(false);
+        }
+      }
+
+      const loadAdoration = async () => {
+        setIsAdorationLoading(true);
+        try {
+          if (adorationCache[church.id]) {
+            setAdorationList(adorationCache[church.id]);
+            return;
+          }
+          const response = await ScheduleApi.getAdorationByChurchId(church.id);
+          const data = await response.json();
+          adorationCache[church.id] = data
+          setAdorationList(data);
+        } catch (error) {
+          setAdorationList([]);
+        } finally {
+          setIsAdorationLoading(false);
+        }
+      }
+
+      await Promise.all([loadMass(), loadConfession(), loadAdoration()]);
+    }, 0)
   }, [church.id]);
 
   return (
@@ -89,17 +129,15 @@ const ChurchDetailModal = ({ church, onClose }: ChurchDetailModalProps) => {
 
             {/* Left Column: Schedules */}
             <div className="lg:col-span-2">
-              <ScheduleTable title="Missas" items={massList} isLoading={isLoading} />
+              <ScheduleTable title="Missas" items={massList} isLoading={isMassLoading} />
 
               <div className="grid sm:grid-cols-2 gap-6">
                 <div>
-                  {/* <ScheduleTable title="Confissões" items={church.confissoes} /> */}
+                  <ScheduleTable title="Confissões" items={confessionList} isLoading={isConfessionLoading} />
                 </div>
-                {/* {church.adoracao && church.adoracao.length > 0 && (
-                  <div>
-                    <ScheduleTable title="Adoração" items={church.adoracao} />
-                  </div>
-                )} */}
+                <div>
+                  <ScheduleTable title="Adoração" items={adorationList} isLoading={isAdorationLoading} />
+                </div>
               </div>
             </div>
 

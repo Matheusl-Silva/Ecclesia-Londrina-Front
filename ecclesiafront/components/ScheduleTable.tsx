@@ -1,11 +1,11 @@
 'use client'
 
-import { MassList } from "@/services/mass/types";
+import { ScheduleList } from "@/services/schedule/types";
 import moment from 'moment';
 
 interface ScheduleTableProps {
     title: string;
-    items: MassList;
+    items: ScheduleList;
     isLoading?: boolean;
 }
 
