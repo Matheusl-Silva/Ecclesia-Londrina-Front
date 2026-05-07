@@ -1,7 +1,10 @@
-'use server'
+"use client";
+
 import { Button } from "@/components/ui/button";
 import type { Church } from "@/services/church/types";
+import { debounce } from "@nathanmgalante/n-js-utils";
 import { Globe, Mail, MapPin, Phone, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import ScheduleTable from "@/components/ScheduleTable";
 import * as MassApi from "@/services/mass/api";
@@ -15,21 +18,36 @@ interface ChurchDetailModalProps {
 
 const cache: Record<number, MassList> = {};
 
-const ChurchDetailModal = async ({ church, onClose }: ChurchDetailModalProps) => {
-  console.log('abrindo modal')
-  let massList: MassList = cache[church.id];
-  if (!massList) {
-    try {
-      // const response = await MassApi.getMassByChurchId(church.id);
-      // massList = await response.json();
-      // cache[church.id] = massList;
-      massList = [];
-      cache[church.id] = massList;
-    } catch (error) {
-      massList = [];
-    }
-  }
-  console.log('modal aberto')
+const ChurchDetailModal = ({ church, onClose }: ChurchDetailModalProps) => {
+  const [massList, setMassList] = useState<MassList>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMassList = async () => {
+      setIsLoading(true);
+      debounce(`fetchMassList-${church.id}`, async () => {
+        if (cache[church.id]) {
+          setMassList(cache[church.id]);
+          setIsLoading(false);
+          return;
+        }
+
+        try {
+          const response = await MassApi.getMassByChurchId(church.id);
+          const data = await response.json();
+          cache[church.id] = data
+          setMassList(data);
+        } catch (error) {
+          setMassList([]);
+        } finally {
+          setIsLoading(false);
+        }
+      });
+    };
+
+    fetchMassList();
+  }, [church.id]);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6">
       {/* Overlay */}
@@ -71,7 +89,7 @@ const ChurchDetailModal = async ({ church, onClose }: ChurchDetailModalProps) =>
 
             {/* Left Column: Schedules */}
             <div className="lg:col-span-2">
-              <ScheduleTable title="Missas" items={massList} />
+              <ScheduleTable title="Missas" items={massList} isLoading={isLoading} />
 
               <div className="grid sm:grid-cols-2 gap-6">
                 <div>

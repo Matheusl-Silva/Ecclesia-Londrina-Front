@@ -1,18 +1,28 @@
 'use client'
 
 import { MassList } from "@/services/mass/types";
+import moment from 'moment';
 
-const convertNumberToWeekDay = (day: number) => {
-    const date = new Date(2024, 0, day + 7);
-    return date.toLocaleDateString('pt-BR', { weekday: 'long' });
+interface ScheduleTableProps {
+    title: string;
+    items: MassList;
+    isLoading?: boolean;
 }
 
-const ScheduleTable = ({ title, items }: { title: string; items: MassList }) => {
+const convertNumberToWeekDay = (day: number) => {
+    moment.locale('pt-br');
+    const dayName = moment().day(day).format('dddd');
+    return dayName.charAt(0).toUpperCase() + dayName.slice(1);
+}
+
+const ScheduleTable = ({ title, items, isLoading = false }: ScheduleTableProps) => {
     const week: Record<number, string[]> = {};
-    items.forEach(({ day_of_week, time }) => {
-        week[day_of_week] ??= [];
-        week[day_of_week].push(time);
-    });
+    if (items && items.length > 0) {
+        items.forEach(({ day_of_week, time }) => {
+            week[day_of_week] ??= [];
+            week[day_of_week].push(time);
+        });
+    }
 
     return (
         <div className="mb-6">
@@ -29,14 +39,29 @@ const ScheduleTable = ({ title, items }: { title: string; items: MassList }) => 
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border/60 bg-card">
-                        {Object.entries(week).map(([weekDay, times], i) => (
-                            <tr key={i} className="hover:bg-muted/30 transition-colors">
-                                <td className="px-4 py-3 font-medium text-foreground w-1/2">{convertNumberToWeekDay(Number(weekDay))}</td>
-                                <td className="px-4 py-3 text-primary font-semibold w-1/2">
-                                    {times.join(", ")}
+                        {isLoading ? (
+                            <tr>
+                                <td colSpan={2} className="px-4 py-3 text-center">
+                                    <div className="flex items-center justify-center gap-3">
+                                        <div className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-primary" />
+                                        <p className="text-sm text-muted-foreground">Carregando horários...</p>
+                                    </div>
                                 </td>
                             </tr>
-                        ))}
+                        ) : !items || items.length === 0 ? (
+                            <tr>
+                                <td colSpan={2} className="px-4 py-3 text-center">
+                                    <p className="text-sm text-muted-foreground">Nenhum horário cadastrado</p>
+                                </td>
+                            </tr>
+                        ) : (
+                            Object.entries(week).map(([weekDay, times], i) => (
+                                <tr key={i} className="hover:bg-muted/30 transition-colors">
+                                    <td className="px-4 py-3 font-medium text-foreground w-1/2">{convertNumberToWeekDay(Number(weekDay))}</td>
+                                    <td className="px-4 py-3 text-primary font-semibold w-1/2">{times.join(", ")}</td>
+                                </tr>
+                            ))
+                        )}
                     </tbody>
                 </table>
             </div>
