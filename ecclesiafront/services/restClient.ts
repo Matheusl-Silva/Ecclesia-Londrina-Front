@@ -49,13 +49,13 @@ export const getRestClientInstance = (interceptor?: RequestInterceptor) => ({
         request(endpoint, 'POST', { ...options, data }, interceptor),
 
     put: (endpoint: string, data?: any, options?: RequestOptions) =>
-        request(endpoint, 'PUT', { ...options, data }),
+        request(endpoint, 'PUT', { ...options, data }, interceptor),
 
     patch: (endpoint: string, data?: any, options?: RequestOptions) =>
-        request(endpoint, 'PATCH', { ...options, data }),
+        request(endpoint, 'PATCH', { ...options, data }, interceptor),
 
     delete: (endpoint: string, options?: RequestOptions) =>
-        request(endpoint, 'DELETE', options),
+        request(endpoint, 'DELETE', options, interceptor),
 });
 
 export const restClient = {
