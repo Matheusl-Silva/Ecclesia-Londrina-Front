@@ -22,7 +22,6 @@ const ChurchCard = ({ church, index }: ChurchCardProps) => {
         onClick={() => setIsModalOpen(true)}
       >
         <div className="aspect-[4/3] w-full overflow-hidden bg-muted relative">
-          {/* Placeholder image that looks like a church */}
           <img
             src={church.logoUrl}
             alt={church.name}

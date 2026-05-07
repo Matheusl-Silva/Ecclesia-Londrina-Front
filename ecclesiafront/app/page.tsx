@@ -1,6 +1,3 @@
-// Remova o "use server" do topo, pois por padrão no diretório app os arquivos são Server Components.
-// Se você mantiver, ele pode ser interpretado como uma Server Action.
-
 import ChurchCard from "@/app/_components/ChurchCard";
 import ChurchFilters from "@/app/_components/ChurchFilters";
 import Footer from "@/components/Footer";
@@ -18,7 +15,7 @@ interface HomePageProps {
 
 const Index = async ({ searchParams }: HomePageProps) => {
   const { search, neighborhood } = await searchParams;
-  
+
   const apiParams = {
     name: search,
     neighborhood: neighborhood === 'all' ? undefined : neighborhood
