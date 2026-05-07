@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 
 import ScheduleTable from "@/components/ScheduleTable";
 import * as ScheduleApi from "@/services/schedule/api";
-import { ScheduleList } from "@/services/schedule/types";
+import { ScheduleList, ScheduleTypeEnum } from "@/services/schedule/types";
 
 interface ChurchDetailModalProps {
   church: Church;
@@ -38,7 +38,7 @@ const ChurchDetailModal = ({ church, onClose }: ChurchDetailModalProps) => {
             setMassList(massCache[church.id]);
             return;
           }
-          const response = await ScheduleApi.getMassByChurchId(church.id);
+          const response = await ScheduleApi.getSchedules(church.id, ScheduleTypeEnum.MASS);
           const data = await response.json();
           massCache[church.id] = data
           setMassList(data);
@@ -56,7 +56,7 @@ const ChurchDetailModal = ({ church, onClose }: ChurchDetailModalProps) => {
             setConfessionList(confessionCache[church.id]);
             return;
           }
-          const response = await ScheduleApi.getConfessionByChurchId(church.id);
+          const response = await ScheduleApi.getSchedules(church.id, ScheduleTypeEnum.CONFESSION);
           const data = await response.json();
           confessionCache[church.id] = data
           setConfessionList(data);
@@ -74,7 +74,7 @@ const ChurchDetailModal = ({ church, onClose }: ChurchDetailModalProps) => {
             setAdorationList(adorationCache[church.id]);
             return;
           }
-          const response = await ScheduleApi.getAdorationByChurchId(church.id);
+          const response = await ScheduleApi.getSchedules(church.id, ScheduleTypeEnum.CELEBRATION);/* TODO: Verificar se é o tipo correto */
           const data = await response.json();
           adorationCache[church.id] = data
           setAdorationList(data);
