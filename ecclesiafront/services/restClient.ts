@@ -1,7 +1,7 @@
 
 import { isNullOrEmpty } from "@nathanmgalante/n-js-utils";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 interface RequestOptions extends Omit<RequestInit, 'method' | 'body'> {
     params?: Record<string, string | number | undefined>;
