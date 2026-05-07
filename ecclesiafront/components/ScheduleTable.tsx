@@ -18,9 +18,9 @@ const convertNumberToWeekDay = (day: number) => {
 const ScheduleTable = ({ title, items, isLoading = false }: ScheduleTableProps) => {
     const week: Record<number, string[]> = {};
     if (items && items.length > 0) {
-        items.forEach(({ day_of_week, time }) => {
-            week[day_of_week] ??= [];
-            week[day_of_week].push(time);
+        items.forEach(({ dayOfWeek, time }) => {
+            week[dayOfWeek] ??= [];
+            week[dayOfWeek].push(time);
         });
     }
 

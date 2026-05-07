@@ -1,9 +1,9 @@
 export interface Schedule {
     id: number,
-    church_id: number,
-    day_of_week: number,
+    churchId: number,
+    dayOfWeek: number,
     time: string,
-    additional_information: string,
+    additionalInformation: string,
 }
 
 export type ScheduleList = Schedule[];
