@@ -5,7 +5,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
 interface RequestOptions extends Omit<RequestInit, 'method' | 'body'> {
     params?: Record<string, string | number | undefined>;
-    data?: any;
+    data?: unknown;
 }
 
 type RequestInterceptor = (config: RequestInit) => RequestInit;
@@ -22,7 +22,7 @@ async function request(
 
     if (params) {
         Object.entries(params).forEach(([key, value]) => {
-            !isNullOrEmpty(value) && url.searchParams.append(key, String(value));
+            if (!isNullOrEmpty(value)) url.searchParams.append(key, String(value))
         });
     }
 
@@ -45,13 +45,13 @@ export const getRestClientInstance = (interceptor?: RequestInterceptor) => ({
     get: (endpoint: string, options?: RequestOptions) =>
         request(endpoint, 'GET', options, interceptor),
 
-    post: (endpoint: string, data?: any, options?: RequestOptions) =>
+    post: (endpoint: string, data?: unknown, options?: RequestOptions) =>
         request(endpoint, 'POST', { ...options, data }, interceptor),
 
-    put: (endpoint: string, data?: any, options?: RequestOptions) =>
+    put: (endpoint: string, data?: unknown, options?: RequestOptions) =>
         request(endpoint, 'PUT', { ...options, data }, interceptor),
 
-    patch: (endpoint: string, data?: any, options?: RequestOptions) =>
+    patch: (endpoint: string, data?: unknown, options?: RequestOptions) =>
         request(endpoint, 'PATCH', { ...options, data }, interceptor),
 
     delete: (endpoint: string, options?: RequestOptions) =>

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Newsreader } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/toaster";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -29,7 +28,6 @@ export default function RootLayout({
         className={`${inter.variable} ${newsreader.variable} antialiased`}
       >
         {children}
-         <Toaster />
       </body>
     </html>
   );

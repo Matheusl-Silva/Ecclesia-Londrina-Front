@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import type { Church } from "@/services/church/types";
 import { debounce } from "@nathanmgalante/n-js-utils";
 import { Globe, Mail, MapPin, Phone, X } from "lucide-react";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 import ScheduleTable from "@/components/ScheduleTable";
@@ -41,7 +42,7 @@ const ChurchDetailModal = ({ church, onClose }: ChurchDetailModalProps) => {
           const data = await response.json();
           massCache[church.id] = data
           setMassList(data);
-        } catch (error) {
+        } catch {
           setMassList([]);
         } finally {
           setIsMassLoading(false);
@@ -59,7 +60,7 @@ const ChurchDetailModal = ({ church, onClose }: ChurchDetailModalProps) => {
           const data = await response.json();
           confessionCache[church.id] = data
           setConfessionList(data);
-        } catch (error) {
+        } catch {
           setConfessionList([]);
         } finally {
           setIsConfessionLoading(false);
@@ -77,7 +78,7 @@ const ChurchDetailModal = ({ church, onClose }: ChurchDetailModalProps) => {
           const data = await response.json();
           adorationCache[church.id] = data
           setAdorationList(data);
-        } catch (error) {
+        } catch {
           setAdorationList([]);
         } finally {
           setIsAdorationLoading(false);
@@ -100,10 +101,12 @@ const ChurchDetailModal = ({ church, onClose }: ChurchDetailModalProps) => {
         style={{ animationDuration: "300ms" }}
       >
         <div className="relative h-48 sm:h-56 flex-shrink-0 bg-primary/80 overflow-hidden">
-          <img
+          <Image
             src={church.logoUrl}
             alt={church.name}
-            className="absolute inset-0 w-full h-full object-cover mix-blend-overlay opacity-60"
+            fill
+            className="object-cover mix-blend-overlay opacity-60"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           />
           <button
             onClick={onClose}
