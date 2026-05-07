@@ -1,12 +1,11 @@
-
 "use client";
 
-import type { Church as ChurchType } from "@/services/church/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import type { Church as ChurchType } from "@/services/church/types";
 import { MapPin } from "lucide-react";
-import ChurchDetailModal from "./ChurchDetailModal";
 import { useState } from "react";
+import ChurchDetailModal from "./ChurchDetailModal";
 
 interface ChurchCardProps {
   church: ChurchType;
@@ -22,41 +21,41 @@ const ChurchCard = ({ church, index }: ChurchCardProps) => {
         style={{ animationDelay: `${index * 80}ms` }}
         onClick={() => setIsModalOpen(true)}
       >
-      <div className="aspect-[4/3] w-full overflow-hidden bg-muted relative">
-        {/* Placeholder image that looks like a church */}
-        <img
-          src={church.logoUrl}
-          alt={church.name}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-      </div>
-      <CardContent className="p-5 md:p-6 flex-1 flex flex-col">
-        <div className="mb-auto text-center sm:text-left">
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Catedral</p>
-          <h3 className="font-serif text-xl sm:text-2xl font-medium text-primary leading-snug mb-3">
-            {church.name}
-          </h3>
-          <div className="flex items-start sm:items-center justify-center sm:justify-start gap-1.5 text-muted-foreground text-sm">
-            <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5 sm:mt-0" />
-            <span className="text-left">{church.street}</span>
+        <div className="aspect-[4/3] w-full overflow-hidden bg-muted relative">
+          {/* Placeholder image that looks like a church */}
+          <img
+            src={church.logoUrl}
+            alt={church.name}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        </div>
+        <CardContent className="p-5 md:p-6 flex-1 flex flex-col">
+          <div className="mb-auto text-center sm:text-left">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Catedral</p>
+            <h3 className="font-serif text-xl sm:text-2xl font-medium text-primary leading-snug mb-3">
+              {church.name}
+            </h3>
+            <div className="flex items-start sm:items-center justify-center sm:justify-start gap-1.5 text-muted-foreground text-sm">
+              <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5 sm:mt-0" />
+              <span className="text-left">{church.street}</span>
+            </div>
           </div>
-        </div>
-        <div className="mt-6 pt-5 border-t border-border/40">
-          <Button
-            variant="outline"
-            className="w-full h-11 border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground transition-colors uppercase tracking-widest text-xs font-bold"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsModalOpen(true);
-            }}
-          >
-            Ver horários
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-      
+          <div className="mt-6 pt-5 border-t border-border/40">
+            <Button
+              variant="outline"
+              className="w-full h-11 border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground transition-colors uppercase tracking-widest text-xs font-bold"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsModalOpen(true);
+              }}
+            >
+              Ver horários
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {isModalOpen && (
         <ChurchDetailModal
           church={church}

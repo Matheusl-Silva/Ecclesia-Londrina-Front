@@ -17,10 +17,8 @@ interface HomePageProps {
 }
 
 const Index = async ({ searchParams }: HomePageProps) => {
-  console.log('iniciando pagina principal')
   const { search, neighborhood } = await searchParams;
-
-  console.log('obtendo params')
+  
   const apiParams = {
     name: search,
     neighborhood: neighborhood === 'all' ? undefined : neighborhood
@@ -30,7 +28,6 @@ const Index = async ({ searchParams }: HomePageProps) => {
   let neighborhoods: string[] = [];
 
   const loadChurches = async () => {
-    console.log('obtendo paroquias')
     try {
       const response = await ChurtApi.searchChurches(apiParams);
       churches = await response.json() as ChurchList;
@@ -40,7 +37,6 @@ const Index = async ({ searchParams }: HomePageProps) => {
   };
 
   const loadNeighborhoods = async () => {
-    console.log('obtendo bairros')
     try {
       const response = await ChurtApi.getAllNeighborhoods();
       neighborhoods = await response.json() as string[];
@@ -49,10 +45,7 @@ const Index = async ({ searchParams }: HomePageProps) => {
     }
   };
 
-  console.log('carregando pagina inicial')
   await debounce('homePageLoad', () => Promise.all([loadChurches(), loadNeighborhoods()]), 0);
-  console.log('pagina inicial carregada')
-
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">

@@ -39,7 +39,6 @@ const ChurchFilters = ({ neighborhoodList }: ChurchFilterProps) => {
   };
 
   const handleSearchChange = (value: string) => {
-    console.log('handleSearchChange: ', value)
     setSearchValue(value);
     debounce('church-search', () => updateUrl('search', value), 600);
   };

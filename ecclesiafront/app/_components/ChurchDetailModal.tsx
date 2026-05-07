@@ -90,18 +90,15 @@ const ChurchDetailModal = ({ church, onClose }: ChurchDetailModalProps) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6">
-      {/* Overlay */}
       <div
         className="absolute inset-0 bg-primary/30 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
         style={{ animationDuration: "200ms" }}
       />
-      {/* Modal Container */}
       <div
         className="relative bg-background w-full max-w-4xl rounded-xl overflow-hidden shadow-2xl animate-fade-in flex flex-col max-h-[95vh] sm:max-h-[90vh]"
         style={{ animationDuration: "300ms" }}
       >
-        {/* Header (Hero Image) */}
         <div className="relative h-48 sm:h-56 flex-shrink-0 bg-primary/80 overflow-hidden">
           <img
             src={church.logoUrl}
@@ -123,14 +120,10 @@ const ChurchDetailModal = ({ church, onClose }: ChurchDetailModalProps) => {
           </div>
         </div>
 
-        {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-[#f8f9ff]">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-
-            {/* Left Column: Schedules */}
             <div className="lg:col-span-2">
               <ScheduleTable title="Missas" items={massList} isLoading={isMassLoading} />
-
               <div className="grid sm:grid-cols-2 gap-6">
                 <div>
                   <ScheduleTable title="Confissões" items={confessionList} isLoading={isConfessionLoading} />
@@ -141,9 +134,7 @@ const ChurchDetailModal = ({ church, onClose }: ChurchDetailModalProps) => {
               </div>
             </div>
 
-            {/* Right Column: Sidebar */}
             <div className="space-y-6">
-              {/* Contact Card */}
               <div className="bg-card rounded-xl border border-border/60 p-5 shadow-sm">
                 <h4 className="text-[11px] font-bold text-muted-foreground uppercase tracking-widest mb-4">Contato & Localização</h4>
                 <div className="space-y-4 mb-6">
@@ -174,19 +165,16 @@ const ChurchDetailModal = ({ church, onClose }: ChurchDetailModalProps) => {
                 </Button>
               </div>
 
-              {/* Liturgical Calendar Placeholder */}
               <div className="bg-[#e6eeff] rounded-xl p-5 border border-primary/10">
                 <div className="flex justify-between items-start mb-4">
                   <h4 className="text-[10px] font-bold text-primary uppercase tracking-widest leading-snug">Calendário<br />Litúrgico</h4>
                   <span className="text-[10px] font-bold text-secondary uppercase leading-snug text-right">Agosto<br />2024</span>
                 </div>
-                {/* Fake Calendar Grid */}
                 <div className="bg-card rounded-lg p-3 shadow-sm">
                   <div className="grid grid-cols-7 gap-1 text-[9px] font-bold text-muted-foreground mb-1 text-center">
                     <div>D</div><div>S</div><div>T</div><div>Q</div><div>Q</div><div>S</div><div>S</div>
                   </div>
                   <div className="grid grid-cols-7 gap-1 text-[11px]">
-                    {/* Placeholder days */}
                     {Array.from({ length: 31 }).map((_, i) => (
                       <div key={i} className={`h-6 w-full flex items-center justify-center rounded-sm border ${i === 4 ? 'bg-secondary text-white font-bold border-secondary' : 'text-foreground border-transparent hover:bg-muted/50 cursor-default'}`}>
                         {i + 1}
