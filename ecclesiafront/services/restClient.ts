@@ -41,7 +41,7 @@ async function request(
     return fetch(url.toString(), config);
 }
 
-export const getRestClientInstance = (interceptor?: RequestInterceptor) => ({
+const getRestClientInstance = (interceptor?: RequestInterceptor) => ({
     get: (endpoint: string, options?: RequestOptions) =>
         request(endpoint, 'GET', options, interceptor),
 
