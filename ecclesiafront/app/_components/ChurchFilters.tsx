@@ -18,6 +18,8 @@ interface ChurchFilterProps {
 }
 
 const ChurchFilters = ({ neighborhoodList }: ChurchFilterProps) => {
+  if (!Array.isArray(neighborhoodList)) neighborhoodList = [];
+
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

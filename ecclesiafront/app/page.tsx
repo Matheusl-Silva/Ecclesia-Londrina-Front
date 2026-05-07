@@ -4,7 +4,6 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import * as ChurtApi from "@/services/church/api";
 import { type ChurchList } from "@/services/church/types";
-import { debounce } from "@nathanmgalante/n-js-utils";
 
 interface HomePageProps {
   searchParams: Promise<{
@@ -21,28 +20,26 @@ const Index = async ({ searchParams }: HomePageProps) => {
     neighborhood: neighborhood === 'all' ? undefined : neighborhood
   };
 
-  let churches: ChurchList | null = null;
-  let neighborhoods: string[] = [];
-
-  const loadChurches = async () => {
+  const loadChurches = async (): Promise<ChurchList | null> => {
     try {
       const response = await ChurtApi.searchChurches(apiParams);
-      churches = await response.json() as ChurchList;
-    } catch (error) {
-      churches = null;
+      return await response.json();
+    } catch {
+      return null;
     }
   };
 
-  const loadNeighborhoods = async () => {
+  const loadNeighborhoods = async (): Promise<string[]> => {
     try {
       const response = await ChurtApi.getAllNeighborhoods();
-      neighborhoods = await response.json() as string[];
-    } catch (error) {
-      neighborhoods = [];
+      return await response.json();
+    } catch {
+      return [];
     }
   };
 
-  await debounce('homePageLoad', () => Promise.all([loadChurches(), loadNeighborhoods()]), 0);
+  const [churches, neighborhoods] = await Promise.all([loadChurches(), loadNeighborhoods()]);
+
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
@@ -65,13 +62,13 @@ const Index = async ({ searchParams }: HomePageProps) => {
           <div className="text-center py-16 bg-card rounded-xl border border-border/40 shadow-sm mt-6">
             <p className="text-muted-foreground text-lg">Erro ao carregar igrejas.</p>
           </div>
-        ) : !(churches as ChurchList).length ? (
+        ) : !churches.length ? (
           <div className="text-center py-16 bg-card rounded-xl border border-border/40 shadow-sm mt-6">
             <p className="text-muted-foreground text-lg">Nenhuma igreja encontrada.</p>
           </div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {(churches as ChurchList).map((church, i) => (
+            {churches.map((church, i) => (
               <ChurchCard key={church.id} church={church} index={i} />
             ))}
           </div>
