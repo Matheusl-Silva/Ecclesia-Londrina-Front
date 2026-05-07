@@ -1,8 +1,12 @@
 
+"use client";
+
 import type { Church as ChurchType } from "@/services/church/types";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
+import ChurchDetailModal from "./ChurchDetailModal";
+import { useState } from "react";
 
 interface ChurchCardProps {
   church: ChurchType;
@@ -10,11 +14,14 @@ interface ChurchCardProps {
 }
 
 const ChurchCard = ({ church, index }: ChurchCardProps) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   return (
-    <Card
-      className="group hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 animate-fade-in border-border/60 overflow-hidden flex flex-col bg-card"
-      style={{ animationDelay: `${index * 80}ms` }}
-    >
+    <>
+      <Card
+        className="group hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 animate-fade-in border-border/60 overflow-hidden flex flex-col bg-card cursor-pointer"
+        style={{ animationDelay: `${index * 80}ms` }}
+        onClick={() => setIsModalOpen(true)}
+      >
       <div className="aspect-[4/3] w-full overflow-hidden bg-muted relative">
         {/* Placeholder image that looks like a church */}
         <img
@@ -39,12 +46,24 @@ const ChurchCard = ({ church, index }: ChurchCardProps) => {
           <Button
             variant="outline"
             className="w-full h-11 border-secondary text-secondary hover:bg-secondary hover:text-secondary-foreground transition-colors uppercase tracking-widest text-xs font-bold"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsModalOpen(true);
+            }}
           >
             Ver horários
           </Button>
         </div>
       </CardContent>
     </Card>
+      
+      {isModalOpen && (
+        <ChurchDetailModal
+          church={church}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
+    </>
   );
 };
 

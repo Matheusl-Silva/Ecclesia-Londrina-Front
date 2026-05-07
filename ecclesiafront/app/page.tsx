@@ -7,9 +7,9 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import * as ChurtApi from "@/services/church/api";
 import { type ChurchList } from "@/services/church/types";
+import { debounce } from "@nathanmgalante/n-js-utils";
 
 interface HomePageProps {
-  // searchParams agora é uma Promise de um objeto
   searchParams: Promise<{
     search?: string;
     neighborhood?: string;
@@ -17,13 +17,10 @@ interface HomePageProps {
 }
 
 const Index = async ({ searchParams }: HomePageProps) => {
-  // É obrigatório dar await antes de acessar as propriedades
-  const filters = await searchParams;
+  console.log('iniciando pagina principal')
+  const { search, neighborhood } = await searchParams;
 
-  const search = filters.search;
-  const neighborhood = filters.neighborhood;
-
-  // Agora você segue com a lógica normal...
+  console.log('obtendo params')
   const apiParams = {
     name: search,
     neighborhood: neighborhood === 'all' ? undefined : neighborhood
@@ -33,6 +30,7 @@ const Index = async ({ searchParams }: HomePageProps) => {
   let neighborhoods: string[] = [];
 
   const loadChurches = async () => {
+    console.log('obtendo paroquias')
     try {
       const response = await ChurtApi.searchChurches(apiParams);
       churches = await response.json() as ChurchList;
@@ -42,6 +40,7 @@ const Index = async ({ searchParams }: HomePageProps) => {
   };
 
   const loadNeighborhoods = async () => {
+    console.log('obtendo bairros')
     try {
       const response = await ChurtApi.getAllNeighborhoods();
       neighborhoods = await response.json() as string[];
@@ -50,12 +49,10 @@ const Index = async ({ searchParams }: HomePageProps) => {
     }
   };
 
-  // 2. Chamadas de API em paralelo
-  // Usamos Promise.all para performance, disparando ambas ao mesmo tempo
-  await Promise.all([loadChurches(), loadNeighborhoods()]);
+  console.log('carregando pagina inicial')
+  await debounce('homePageLoad', () => Promise.all([loadChurches(), loadNeighborhoods()]), 0);
+  console.log('pagina inicial carregada')
 
-  // 3. Extração dos dados
-  // Tratamos o erro caso a resposta seja nula ou o .json() falhe
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">

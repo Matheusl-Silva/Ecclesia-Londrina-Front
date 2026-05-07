@@ -27,8 +27,6 @@ async function request(
         });
     }
 
-    console.log('url: ', url.searchParams);
-
     // 2. Configuração do Fetch
     const config: RequestInit = {
         ...customConfig,

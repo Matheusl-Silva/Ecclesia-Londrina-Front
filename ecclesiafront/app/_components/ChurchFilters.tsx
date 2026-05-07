@@ -22,11 +22,8 @@ const ChurchFilters = ({ neighborhoodList }: ChurchFilterProps) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-
-  // 1. Estado local para garantir que o Input seja fluido
   const [searchValue, setSearchValue] = useState(searchParams.get('search') || "");
 
-  // 2. Função unificada para atualizar a URL
   const updateUrl = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
 
@@ -41,15 +38,10 @@ const ChurchFilters = ({ neighborhoodList }: ChurchFilterProps) => {
     });
   };
 
-  // 3. Handler para o Input de busca
   const handleSearchChange = (value: string) => {
-    setSearchValue(value); // Atualiza o texto na tela NA HORA
-
-    // Chamada do seu debounce customizado
-    // Usamos uma key fixa ('church-search') para que ele saiba que é a mesma operação
-    debounce('church-search', () => {
-      updateUrl('search', value);
-    }, 600); // 600ms para dar tempo de digitar em Londrina com calma
+    console.log('handleSearchChange: ', value)
+    setSearchValue(value);
+    debounce('church-search', () => updateUrl('search', value), 600);
   };
 
   return (
