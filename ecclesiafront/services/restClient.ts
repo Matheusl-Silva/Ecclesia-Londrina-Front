@@ -8,45 +8,45 @@ interface RequestOptions extends Omit<RequestInit, 'method' | 'body'> {
     data?: any;
 }
 
+type RequestInterceptor = (config: RequestInit) => RequestInit;
+
 async function request(
     endpoint: string,
     method: string,
-    options: RequestOptions = {}
+    options: RequestOptions = {},
+    interceptor?: RequestInterceptor
 ): Promise<Response> {
-    const { params, data, ...customConfig } = options;
+    const { params, data } = options;
 
     const url = new URL(`${BASE_URL}${endpoint}`);
 
-    // 1. Filtro de Parâmetros
     if (params) {
         Object.entries(params).forEach(([key, value]) => {
-            // Só adiciona ao URLSearchParams se NÃO for nulo ou vazio
-            if (!isNullOrEmpty(value)) {
-                url.searchParams.append(key, String(value));
-            }
+            !isNullOrEmpty(value) && url.searchParams.append(key, String(value));
         });
     }
 
-    // 2. Configuração do Fetch
-    const config: RequestInit = {
-        ...customConfig,
+    let config: RequestInit = {
         method,
         headers: {
             'Content-Type': 'application/json',
-            ...customConfig.headers,
         },
         body: data ? JSON.stringify(data) : undefined,
     };
 
+    if (!!interceptor) {
+        config = interceptor(config);
+    }
+
     return fetch(url.toString(), config);
 }
 
-export const restClient = {
+export const getRestClientInstance = (interceptor?: RequestInterceptor) => ({
     get: (endpoint: string, options?: RequestOptions) =>
-        request(endpoint, 'GET', options),
+        request(endpoint, 'GET', options, interceptor),
 
     post: (endpoint: string, data?: any, options?: RequestOptions) =>
-        request(endpoint, 'POST', { ...options, data }),
+        request(endpoint, 'POST', { ...options, data }, interceptor),
 
     put: (endpoint: string, data?: any, options?: RequestOptions) =>
         request(endpoint, 'PUT', { ...options, data }),
@@ -56,4 +56,12 @@ export const restClient = {
 
     delete: (endpoint: string, options?: RequestOptions) =>
         request(endpoint, 'DELETE', options),
+});
+
+export const restClient = {
+    public: getRestClientInstance(),
+    private: getRestClientInstance((config) => {
+        // Posteriormente adicionar autenticação aqui...
+        return config;
+    })
 };

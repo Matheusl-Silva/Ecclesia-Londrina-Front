@@ -1,9 +1,9 @@
 import { restClient } from "@/services/restClient";
 
 export const searchChurches = (params: Record<string, string | undefined>) => {
-    return restClient.get("/church/find", { params });
+    return restClient.private.get("/church/find", { params });
 };
 
 export const getAllNeighborhoods = () => {
-    return restClient.get("/church/neighborhoods");
+    return restClient.private.get("/church/neighborhoods");
 };
