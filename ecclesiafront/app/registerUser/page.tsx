@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { ArrowLeft, User, Mail, Phone, Shield, Church, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -120,7 +121,7 @@ const CadastroPessoa = () => {
             >
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <img src={logo.src} alt="Ecclesia Londrina" className="h-10 w-10 rounded-full" />
+            <Image src={logo} alt="Ecclesia Londrina" width={40} height={40} className="rounded-full" />
             <div>
               <h1 className="text-xl md:text-2xl font-bold tracking-tight">
                 Cadastrar Pessoa

@@ -1,75 +1,81 @@
-"use client"
-
-import { useState, useMemo } from "react";
+import ChurchCard from "@/app/_components/ChurchCard";
+import ChurchFilters from "@/app/_components/ChurchFilters";
+import Footer from "@/components/Footer";
 import Header from "@/components/Header";
-import SearchBar from "@/components/SearchBar";
-import ChurchCard from "@/components/ChurchCard";
-import ChurchDetailModal from "@/components/ChurchDetailModal";
-import { churches, type Church } from "@/data/churches";
+import * as ChurtApi from "@/services/church/api";
+import { type ChurchList } from "@/services/church/types";
 
-const Index = () => {
-  const [search, setSearch] = useState("");
-  const [bairro, setBairro] = useState("todos");
-  const [selectedChurch, setSelectedChurch] = useState<Church | null>(null);
+interface HomePageProps {
+  searchParams: Promise<{
+    search?: string;
+    neighborhood?: string;
+  }>;
+}
 
-  const filtered = useMemo(() => {
-    const term = search.toLowerCase().trim();
-    return churches.filter((c) => {
-      const matchesBairro = bairro === "todos" || c.bairro === bairro;
-      const matchesSearch =
-        !term ||
-        c.nome.toLowerCase().includes(term) ||
-        c.bairro.toLowerCase().includes(term);
-      return matchesBairro && matchesSearch;
-    });
-  }, [search, bairro]);
+const Index = async ({ searchParams }: HomePageProps) => {
+  const { search, neighborhood } = await searchParams;
+
+  const apiParams = {
+    name: search,
+    neighborhood: neighborhood === 'all' ? undefined : neighborhood
+  };
+
+  const loadChurches = async (): Promise<ChurchList | null> => {
+    try {
+      const response = await ChurtApi.searchChurches(apiParams);
+      return await response.json();
+    } catch {
+      return null;
+    }
+  };
+
+  const loadNeighborhoods = async (): Promise<string[]> => {
+    try {
+      const response = await ChurtApi.getAllNeighborhoods();
+      return await response.json();
+    } catch {
+      return [];
+    }
+  };
+
+  const [churches, neighborhoods] = await Promise.all([loadChurches(), loadNeighborhoods()]);
+
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col font-sans">
       <Header />
-      <SearchBar
-        search={search}
-        onSearchChange={setSearch}
-        bairro={bairro}
-        onBairroChange={setBairro}
-      />
 
-      <main className="container mx-auto pb-12">
-        {filtered.length === 0 ? (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground text-lg">
-              Nenhuma igreja encontrada para sua busca.
-            </p>
+      <section className="bg-primary text-primary-foreground pt-10 pb-28 px-4 relative overflow-hidden flex-shrink-0">
+        <div className="absolute inset-0 opacity-20 bg-[url('https://images.unsplash.com/photo-1548625361-ec853713009a?q=80&w=1200&auto=format&fit=crop')] bg-cover bg-center mix-blend-overlay"></div>
+        <div className="max-w-[1200px] mx-auto relative z-10 mt-2">
+          <ChurchFilters neighborhoodList={neighborhoods} />
+        </div>
+      </section>
+
+      <main className="max-w-[1200px] mx-auto px-4 pb-20 -mt-16 relative z-20 flex-1 w-full">
+        <div className="mb-8 text-center sm:text-left pt-2">
+          <p className="text-secondary font-bold text-xs tracking-[0.2em] uppercase mb-1">Londrina - PR</p>
+          <h2 className="text-primary font-serif text-4xl sm:text-5xl font-medium">Paróquias</h2>
+        </div>
+
+        {!churches ? (
+          <div className="text-center py-16 bg-card rounded-xl border border-border/40 shadow-sm mt-6">
+            <p className="text-muted-foreground text-lg">Erro ao carregar igrejas.</p>
+          </div>
+        ) : !churches.length ? (
+          <div className="text-center py-16 bg-card rounded-xl border border-border/40 shadow-sm mt-6">
+            <p className="text-muted-foreground text-lg">Nenhuma igreja encontrada.</p>
           </div>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filtered.map((church, i) => (
-              <ChurchCard
-                key={church.id}
-                church={church}
-                onSelect={setSelectedChurch}
-                index={i}
-              />
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {churches.map((church, i) => (
+              <ChurchCard key={church.id} church={church} index={i} />
             ))}
           </div>
         )}
-
-        {/* Gold accent divider */}
-        <div className="mt-12 flex items-center justify-center gap-3">
-          <div className="h-px w-12 bg-gold/40" />
-          <span className="text-xs text-muted-foreground tracking-widest uppercase">
-            Ecclesia Londrina
-          </span>
-          <div className="h-px w-12 bg-gold/40" />
-        </div>
       </main>
 
-      {selectedChurch && (
-        <ChurchDetailModal
-          church={selectedChurch}
-          onClose={() => setSelectedChurch(null)}
-        />
-      )}
+      <Footer />
     </div>
   );
 };
