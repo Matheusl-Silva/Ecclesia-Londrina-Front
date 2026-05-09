@@ -7,3 +7,19 @@ export const searchChurches = (params: Record<string, string | undefined>) => {
 export const getAllNeighborhoods = () => {
     return restClient.private.get("/church/neighborhoods");
 };
+
+export const createChurch = (data: {
+    name: string;
+    cnpj: string;
+    email: string;
+    phone: string;
+    logoUrl: string;
+    street: string;
+    number: number;
+    complement: string;
+    neighborhood: string;
+    city: string;
+    postalCode: string;
+}) => {
+    return restClient.private.post("/church/create", data);
+};
