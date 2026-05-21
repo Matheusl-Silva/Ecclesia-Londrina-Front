@@ -28,3 +28,14 @@ export enum ScheduleTypeEnum {
     OTHER = 'other',
     PARTY = 'party'
 }
+
+export interface CreateSchedulePayload {
+    church_id: number;
+    title: string;
+    dayOfWeek: number;
+    startsAt: string;
+    endsAt?: string | null;
+    type: string;
+    isRecurring: boolean;
+    additionalInformation?: string | null;
+}

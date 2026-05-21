@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls lib *)",
+      "Bash(ls utils *)",
+      "Bash(ls node_modules/@nathanmgalante/n-js-utils)",
+      "Bash(cat node_modules/@nathanmgalante/n-js-utils/package.json)",
+      "Bash(find node_modules/@nathanmgalante/n-js-utils -maxdepth 3 -type f)"
+    ]
+  }
+}

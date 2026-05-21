@@ -93,6 +93,14 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--secondary) !important;
+  box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2);
+}
+
 * {
   border-color: var(--border);
 }
