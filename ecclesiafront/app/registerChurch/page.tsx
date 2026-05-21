@@ -6,24 +6,18 @@ import { toast } from "@/hooks/use-toast";
 import { createChurch } from "@/services/church/api";
 import { createSchedule } from "@/services/schedule/api";
 import { CreateSchedulePayload, ScheduleTypeEnum } from "@/services/schedule/types";
+import { isCnpj } from "@nathanmgalante/n-js-utils";
+import { convertNumberToWeekDay } from "@/lib/dateUtils";
 
-const DIAS_SEMANA = [
-  "Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira",
-  "Quinta-feira", "Sexta-feira", "Sábado",
-];
-
-const DAY_NAME_TO_NUMBER: Record<string, number> = {
-  "Domingo": 0, "Segunda-feira": 1, "Terça-feira": 2, "Quarta-feira": 3,
-  "Quinta-feira": 4, "Sexta-feira": 5, "Sábado": 6,
-};
+const WEEK_DAYS = [0, 1, 2, 3, 4, 5, 6];
 
 interface ScheduleEntry {
   id: string;
-  dia: string;
-  horario: string;
+  dayOfWeek: number | "";
+  time: string;
 }
 
-const newEntry = (): ScheduleEntry => ({ id: crypto.randomUUID(), dia: "", horario: "" });
+const newEntry = (): ScheduleEntry => ({ id: crypto.randomUUID(), dayOfWeek: "", time: "" });
 
 const addEntry = (setter: Dispatch<SetStateAction<ScheduleEntry[]>>) =>
   setter((prev) => [...prev, newEntry()]);
@@ -31,9 +25,8 @@ const addEntry = (setter: Dispatch<SetStateAction<ScheduleEntry[]>>) =>
 const updateEntry = (
   setter: Dispatch<SetStateAction<ScheduleEntry[]>>,
   index: number,
-  field: "dia" | "horario",
-  value: string
-) => setter((prev) => prev.map((e, i) => i === index ? { ...e, [field]: value } : e));
+  patch: Partial<ScheduleEntry>
+) => setter((prev) => prev.map((e, i) => i === index ? { ...e, ...patch } : e));
 
 const removeEntry = (setter: Dispatch<SetStateAction<ScheduleEntry[]>>, index: number) =>
   setter((prev) => prev.filter((_, i) => i !== index));
@@ -47,7 +40,7 @@ interface ScheduleSectionProps {
   borderClass: string;
   entries: ScheduleEntry[];
   onAdd: () => void;
-  onUpdate: (i: number, f: "dia" | "horario", v: string) => void;
+  onUpdate: (i: number, patch: Partial<ScheduleEntry>) => void;
   onRemove: (i: number) => void;
 }
 
@@ -74,11 +67,11 @@ const ScheduleSection = ({ title, icon, colorClass, borderClass, entries, onAdd,
             <label className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">Dia da Semana</label>
             <select
               className="border border-border rounded px-3 py-2 text-sm bg-background text-foreground"
-              value={entry.dia}
-              onChange={(e) => onUpdate(idx, "dia", e.target.value)}
+              value={entry.dayOfWeek}
+              onChange={(e) => onUpdate(idx, { dayOfWeek: e.target.value === "" ? "" : Number(e.target.value) })}
             >
               <option value="">Selecione</option>
-              {DIAS_SEMANA.map((d) => <option key={d} value={d}>{d}</option>)}
+              {WEEK_DAYS.map((d) => <option key={d} value={d}>{convertNumberToWeekDay(d)}</option>)}
             </select>
           </div>
           <div className="flex flex-col gap-1">
@@ -86,8 +79,8 @@ const ScheduleSection = ({ title, icon, colorClass, borderClass, entries, onAdd,
             <input
               type="time"
               className="border border-border rounded px-3 py-2 text-sm bg-background text-foreground"
-              value={entry.horario}
-              onChange={(e) => onUpdate(idx, "horario", e.target.value)}
+              value={entry.time}
+              onChange={(e) => onUpdate(idx, { time: e.target.value })}
             />
           </div>
           {entries.length > 1 && (
@@ -128,7 +121,6 @@ const RegisterChurch = () => {
   const [loading, setLoading] = useState(false);
 
   const scheduleState = { massas, confissoes, adoracoes };
-  const scheduleSetters = { massas: setMassas, confissoes: setConfissoes, adoracoes: setAdoracoes };
 
   const setField = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -139,6 +131,11 @@ const RegisterChurch = () => {
     const streetNumber = parseInt(form.number, 10);
     if (!form.name.trim() || !form.street.trim() || isNaN(streetNumber) || !form.neighborhood.trim() || !form.city.trim()) {
       toast({ title: "Campos obrigatórios", description: "Preencha nome, rua, número válido, bairro e cidade.", variant: "destructive" });
+      return;
+    }
+
+    if (form.cnpj.trim() && !isCnpj(form.cnpj)) {
+      toast({ title: "CNPJ inválido", description: "Verifique o CNPJ informado.", variant: "destructive" });
       return;
     }
 
@@ -161,10 +158,10 @@ const RegisterChurch = () => {
 
       const schedulePayloads: CreateSchedulePayload[] = SCHEDULE_CONFIG.flatMap(({ key, title, type }) =>
         scheduleState[key]
-          .filter((e) => e.dia && e.horario)
+          .filter((e) => e.dayOfWeek !== "" && e.time)
           .map((e) => ({
-            church_id: churchId, title, dayOfWeek: DAY_NAME_TO_NUMBER[e.dia],
-            startsAt: e.horario, endsAt: e.horario, type,
+            church_id: churchId, title, dayOfWeek: e.dayOfWeek as number,
+            startsAt: e.time, endsAt: e.time, type,
             isRecurring: true, additionalInformation: null,
           }))
       );
@@ -344,21 +341,21 @@ const RegisterChurch = () => {
                 title="Missas" icon="auto_stories" colorClass="text-primary" borderClass="border-primary"
                 entries={massas}
                 onAdd={() => addEntry(setMassas)}
-                onUpdate={(i, f, v) => updateEntry(setMassas, i, f, v)}
+                onUpdate={(i, patch) => updateEntry(setMassas, i, patch)}
                 onRemove={(i) => removeEntry(setMassas, i)}
               />
               <ScheduleSection
                 title="Confissões" icon="church" colorClass="text-secondary" borderClass="border-secondary"
                 entries={confissoes}
                 onAdd={() => addEntry(setConfissoes)}
-                onUpdate={(i, f, v) => updateEntry(setConfissoes, i, f, v)}
+                onUpdate={(i, patch) => updateEntry(setConfissoes, i, patch)}
                 onRemove={(i) => removeEntry(setConfissoes, i)}
               />
               <ScheduleSection
                 title="Adorações" icon="satellite_alt" colorClass="text-muted-foreground" borderClass="border-muted-foreground"
                 entries={adoracoes}
                 onAdd={() => addEntry(setAdoracoes)}
-                onUpdate={(i, f, v) => updateEntry(setAdoracoes, i, f, v)}
+                onUpdate={(i, patch) => updateEntry(setAdoracoes, i, patch)}
                 onRemove={(i) => removeEntry(setAdoracoes, i)}
               />
             </div>
