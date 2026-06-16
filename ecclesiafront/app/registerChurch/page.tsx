@@ -1,386 +1,398 @@
 "use client";
 
+import { Dispatch, SetStateAction, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import logo from "@/assets/logo.png";
 import { toast } from "@/hooks/use-toast";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Plus, Trash2, Church, Clock, MapPin, Phone, Mail, FileText, Image, MessageSquare } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { createChurch } from "@/services/church/api";
+import { createSchedule } from "@/services/schedule/api";
+import { CreateSchedulePayload, ScheduleTypeEnum } from "@/services/schedule/types";
+import { isCnpj } from "@nathanmgalante/n-js-utils";
+import { convertNumberToWeekDay } from "@/lib/dateUtils";
 
-const DIAS_SEMANA = [
-  "Domingo",
-  "Segunda-feira",
-  "Terça-feira",
-  "Quarta-feira",
-  "Quinta-feira",
-  "Sexta-feira",
-  "Sábado"
+const WEEK_DAYS = [0, 1, 2, 3, 4, 5, 6];
+
+interface ScheduleEntry {
+  id: string;
+  dayOfWeek: number | "";
+  time: string;
+}
+
+const newEntry = (): ScheduleEntry => ({ id: crypto.randomUUID(), dayOfWeek: "", time: "" });
+
+const addEntry = (setter: Dispatch<SetStateAction<ScheduleEntry[]>>) =>
+  setter((prev) => [...prev, newEntry()]);
+
+const updateEntry = (
+  setter: Dispatch<SetStateAction<ScheduleEntry[]>>,
+  index: number,
+  patch: Partial<ScheduleEntry>
+) => setter((prev) => prev.map((e, i) => i === index ? { ...e, ...patch } : e));
+
+const removeEntry = (setter: Dispatch<SetStateAction<ScheduleEntry[]>>, index: number) =>
+  setter((prev) => prev.filter((_, i) => i !== index));
+
+// --- ScheduleSection component (module-level to avoid remount on every render) ---
+
+interface ScheduleSectionProps {
+  title: string;
+  icon: string;
+  colorClass: string;
+  borderClass: string;
+  entries: ScheduleEntry[];
+  onAdd: () => void;
+  onUpdate: (i: number, patch: Partial<ScheduleEntry>) => void;
+  onRemove: (i: number) => void;
+}
+
+const ScheduleSection = ({ title, icon, colorClass, borderClass, entries, onAdd, onUpdate, onRemove }: ScheduleSectionProps) => (
+  <div className={`bg-accent p-6 rounded-xl border-l-4 ${borderClass}`}>
+    <div className="flex justify-between items-center mb-6">
+      <div className={`flex items-center gap-3 ${colorClass}`}>
+        <span className="material-symbols-outlined">{icon}</span>
+        <h4 className="text-sm font-bold tracking-widest uppercase">{title}</h4>
+      </div>
+      <button
+        type="button"
+        onClick={onAdd}
+        className={`flex items-center gap-2 ${colorClass} text-xs font-bold tracking-widest uppercase hover:underline`}
+      >
+        <span className="material-symbols-outlined" style={{ fontSize: "18px" }}>add_circle</span>
+        Adicionar Horário
+      </button>
+    </div>
+    <div className="space-y-4">
+      {entries.map((entry, idx) => (
+        <div key={entry.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-white p-4 rounded border border-border items-end shadow-sm">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">Dia da Semana</label>
+            <select
+              className="border border-border rounded px-3 py-2 text-sm bg-background text-foreground"
+              value={entry.dayOfWeek}
+              onChange={(e) => onUpdate(idx, { dayOfWeek: e.target.value === "" ? "" : Number(e.target.value) })}
+            >
+              <option value="">Selecione</option>
+              {WEEK_DAYS.map((d) => <option key={d} value={d}>{convertNumberToWeekDay(d)}</option>)}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">Horário</label>
+            <input
+              type="time"
+              className="border border-border rounded px-3 py-2 text-sm bg-background text-foreground"
+              value={entry.time}
+              onChange={(e) => onUpdate(idx, { time: e.target.value })}
+            />
+          </div>
+          {entries.length > 1 && (
+            <button
+              type="button"
+              onClick={() => onRemove(idx)}
+              className="text-destructive hover:bg-destructive/10 p-2 rounded transition-colors w-fit md:ml-auto"
+            >
+              <span className="material-symbols-outlined">delete</span>
+            </button>
+          )}
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+// --- Page ---
+
+const SCHEDULE_CONFIG = [
+  { key: "massas" as const,     title: "Missa",     type: ScheduleTypeEnum.MASS },
+  { key: "confissoes" as const, title: "Confissão", type: ScheduleTypeEnum.CONFESSION },
+  { key: "adoracoes" as const,  title: "Adoração",  type: ScheduleTypeEnum.OTHER },
 ];
-
-const HORARIOS: string[] = [];
-for (let h = 0; h < 24; h++) {
-  const hora = String(h).padStart(2, '0');
-  HORARIOS.push(`${hora}:00`, `${hora}:30`);
-}
-
-interface MassEntry {
-  dia: string;
-  horario: string;
-}
 
 const RegisterChurch = () => {
   const router = useRouter();
 
-  const [name, setName] = useState('');
-  const [cnpj, setCnpj] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
-  const [logoUrl, setLogoUrl] = useState('');
+  const [form, setForm] = useState({
+    name: "", cnpj: "", email: "", phone: "", logoUrl: "",
+    street: "", number: "", complement: "", neighborhood: "", city: "", postalCode: "",
+  });
 
-  // controlar os estados da missa, começa sempre vazio
-  const [massas, setMassas] = useState<MassEntry[]>([{ dia: "", horario: "" }]);
-  const [confissoes, setConfissoes] = useState<MassEntry[]>([{ dia: "", horario: "" }]);
+  const [massas, setMassas] = useState<ScheduleEntry[]>([newEntry()]);
+  const [confissoes, setConfissoes] = useState<ScheduleEntry[]>([newEntry()]);
+  const [adoracoes, setAdoracoes] = useState<ScheduleEntry[]>([newEntry()]);
 
-  const addMass = () => {
-    setMassas([...massas, { dia: "", horario: "" }]);
-  };
+  const [loading, setLoading] = useState(false);
 
-  const updateMass = (index: number, field: keyof MassEntry, value: string) => {
-    const newMassas = [...massas];
-    newMassas[index][field] = value;
-    setMassas(newMassas);
-  };
+  const scheduleState = { massas, confissoes, adoracoes };
 
-  const removeMass = (index: number) => {
-    const newMassas = [...massas];
-    newMassas.splice(index, 1);
-    setMassas(newMassas);
-  };
+  const setField = (field: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
-  const addConfissao = () => {
-    setConfissoes([...confissoes, { dia: "", horario: "" }]);
-  };
-
-  const updateConfissao = (index: number, field: keyof MassEntry, value: string) => {
-    const newConfissoes = [...confissoes];
-    newConfissoes[index][field] = value;
-    setConfissoes(newConfissoes);
-  };
-
-  const removeConfissao = (index: number) => {
-    const newConfissoes = [...confissoes];
-    newConfissoes.splice(index, 1);
-    setConfissoes(newConfissoes);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!name.trim() || !address.trim()) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Preencha pelo menos o nome e o endereço da paróquia.",
-        variant: "destructive",
-      });
+    const streetNumber = parseInt(form.number, 10);
+    if (!form.name.trim() || !form.street.trim() || isNaN(streetNumber) || !form.neighborhood.trim() || !form.city.trim()) {
+      toast({ title: "Campos obrigatórios", description: "Preencha nome, rua, número válido, bairro e cidade.", variant: "destructive" });
       return;
     }
 
-    toast({
-      title: "Paróquia cadastrada!",
-      description: `"${name}" foi registrada com sucesso. (Apenas UI – dados não persistidos)`,
-    });
+    if (form.cnpj.trim() && !isCnpj(form.cnpj)) {
+      toast({ title: "CNPJ inválido", description: "Verifique o CNPJ informado.", variant: "destructive" });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const churchResponse = await createChurch({
+        name: form.name.trim(), cnpj: form.cnpj.trim(), email: form.email.trim(),
+        phone: form.phone.trim(), logoUrl: form.logoUrl.trim(), street: form.street.trim(),
+        number: streetNumber, complement: form.complement.trim(),
+        neighborhood: form.neighborhood.trim(), city: form.city.trim(), postalCode: form.postalCode.trim(),
+      });
+
+      if (!churchResponse.ok) {
+        const err = await churchResponse.json().catch(() => ({})) as { message?: string };
+        throw new Error(err.message || "Erro ao cadastrar paróquia");
+      }
+
+      const church = await churchResponse.json();
+      const churchId: number = church?.id;
+
+      const schedulePayloads: CreateSchedulePayload[] = SCHEDULE_CONFIG.flatMap(({ key, title, type }) =>
+        scheduleState[key]
+          .filter((e) => e.dayOfWeek !== "" && e.time)
+          .map((e) => ({
+            church_id: churchId, title, dayOfWeek: e.dayOfWeek as number,
+            startsAt: e.time, endsAt: e.time, type,
+            isRecurring: true, additionalInformation: null,
+          }))
+      );
+
+      const scheduleResults = await Promise.all(schedulePayloads.map((p) => createSchedule(p)));
+      const failed = scheduleResults.find((r) => !r.ok);
+      if (failed) throw new Error("Paróquia cadastrada, mas houve erro ao salvar os horários.");
+
+      toast({ title: "Paróquia cadastrada!", description: `"${form.name}" foi registrada com sucesso.` });
+      router.push("/");
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Erro",
+        description: err instanceof Error ? err.message : "Não foi possível cadastrar a paróquia.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-primary text-primary-foreground">
-        <div className="container mx-auto py-6 md:py-8 max-w-4xl">
+    <div className="min-h-screen flex bg-background text-foreground">
+      {/* Sidebar */}
+      <aside className="hidden md:flex flex-col h-screen w-64 bg-card fixed left-0 top-0 bottom-0 p-4 gap-2 border-r border-border shadow-sm">
+        <div className="mb-8 px-4 py-2">
+          <h1 className="font-serif text-2xl font-semibold text-primary leading-tight">Ecclesia Admin</h1>
+          <p className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground opacity-70 mt-1">
+            Londrina-PR Diocese
+          </p>
+        </div>
+        <nav className="flex flex-col gap-1">
+          <a href="/" className="flex items-center gap-3 px-4 py-3 text-muted-foreground hover:bg-accent rounded-full transition-all">
+            <span className="material-symbols-outlined">dashboard</span>
+            <span className="text-xs font-bold tracking-widest uppercase">Dashboard</span>
+          </a>
+          <a href="#" className="flex items-center gap-3 px-4 py-3 bg-[#fed65b] text-[#574500] font-bold rounded-full translate-x-1">
+            <span className="material-symbols-outlined">church</span>
+            <span className="text-xs font-bold tracking-widest uppercase">Parishes</span>
+          </a>
+          <a href="/registerUser" className="flex items-center gap-3 px-4 py-3 text-muted-foreground hover:bg-accent rounded-full transition-all">
+            <span className="material-symbols-outlined">group</span>
+            <span className="text-xs font-bold tracking-widest uppercase">Users</span>
+          </a>
+          <a href="#" className="flex items-center gap-3 px-4 py-3 text-muted-foreground hover:bg-accent rounded-full transition-all">
+            <span className="material-symbols-outlined">settings</span>
+            <span className="text-xs font-bold tracking-widest uppercase">Settings</span>
+          </a>
+        </nav>
+        <div className="mt-auto p-4 border-t border-border">
           <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => router.push("/")}
-              className="text-primary-foreground hover:bg-primary-foreground/10"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <img src={logo.src} alt="Ecclesia Londrina" className="h-10 w-10 rounded-full" />
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold tracking-tight">
-                Cadastrar Paróquia
-              </h1>
-              <p className="text-sm text-primary-foreground/70">
-                Adicione uma nova igreja ao site
-              </p>
+            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold text-sm shrink-0">
+              AD
+            </div>
+            <div className="flex flex-col">
+              <span className="font-semibold text-sm text-foreground">Admin Diocesano</span>
+              <span className="text-[10px] font-bold tracking-widest uppercase text-muted-foreground">ONLINE</span>
             </div>
           </div>
         </div>
-      </header>
+      </aside>
 
-      {/* Form */}
-      <main className="container mx-auto py-8 max-w-4xl">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Dados da Igreja */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Church className="h-5 w-5 text-primary" />
-                Dados da Igreja
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="name">Nome *</Label>
-                <Input
-                  id="name"
-                  placeholder="Ex: Paróquia São José"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  maxLength={100}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="cnpj">
-                  <FileText className="inline h-3.5 w-3.5 mr-1" />
-                  CNPJ
-                </Label>
-                <Input
-                  id="cnpj"
-                  placeholder="00.000.000/0000-00"
-                  value={cnpj}
-                  onChange={(e) => setCnpj(e.target.value)}
-                  maxLength={18}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="email">
-                    <Mail className="inline h-3.5 w-3.5 mr-1" />
-                    E-mail
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="paroquia@email.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    maxLength={100}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="phone">
-                    <Phone className="inline h-3.5 w-3.5 mr-1" />
-                    Telefone
-                  </Label>
-                  <Input
-                    id="phone"
-                    placeholder="(43) 99999-9999"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    maxLength={20}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="logoUrl">
-                  <Image className="inline h-3.5 w-3.5 mr-1" />
-                  URL do Logo
-                </Label>
-                <Input
-                  id="logoUrl"
-                  placeholder="https://exemplo.com/logo.png"
-                  value={logoUrl}
-                  onChange={(e) => setLogoUrl(e.target.value)}
-                  maxLength={500}
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="address">
-                  <MapPin className="inline h-3.5 w-3.5 mr-1" />
-                  Endereço completo *
-                </Label>
-                <Input
-                  id="address"
-                  placeholder="Rua das Acácias, 120 – Jardim Califórnia, Londrina – PR"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  maxLength={200}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-            {/* Horários de Missa */}
-            <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary" />
-                Horários de Missa
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {massas.map((entry, idx) => (
-                <div
-                  key={idx}
-                  className="border border-border rounded-lg p-4 bg-muted/30 flex flex-col sm:flex-row items-start sm:items-end gap-3"
-                >
-                  <div className="flex-1 w-full">
-                    <Label className="text-sm">Dia da semana</Label>
-                    <Select
-                      value={entry.dia}
-                      onValueChange={(v) => updateMass(idx, "dia", v)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o dia" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {DIAS_SEMANA.map((d) => (
-                          <SelectItem key={d} value={d}>
-                            {d}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex-1 w-full">
-                    <Label className="text-sm">Horário</Label>
-                    <Select
-                      value={entry.horario}
-                      onValueChange={(v) => updateMass(idx, "horario", v)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o horário" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {HORARIOS.map((h) => (
-                          <SelectItem key={h} value={h}>
-                            {h}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {massas.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeMass(idx)}
-                      className="text-destructive hover:text-destructive shrink-0"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-
-              <Button type="button" variant="secondary" size="sm" onClick={addMass}>
-                <Plus className="h-4 w-4 mr-1" /> Adicionar horário
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Horários de Confissão */}
-          <Card>
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-primary" />
-                Horários de Confissão
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {confissoes.map((entry, idx) => (
-                <div
-                  key={idx}
-                  className="border border-border rounded-lg p-4 bg-muted/30 flex flex-col sm:flex-row items-start sm:items-end gap-3"
-                >
-                  <div className="flex-1 w-full">
-                    <Label className="text-sm">Dia da semana</Label>
-                    <Select
-                      value={entry.dia}
-                      onValueChange={(v) => updateConfissao(idx, "dia", v)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o dia" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {DIAS_SEMANA.map((d) => (
-                          <SelectItem key={d} value={d}>
-                            {d}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="flex-1 w-full">
-                    <Label className="text-sm">Horário</Label>
-                    <Select
-                      value={entry.horario}
-                      onValueChange={(v) => updateConfissao(idx, "horario", v)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o horário" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {HORARIOS.map((h) => (
-                          <SelectItem key={h} value={h}>
-                            {h}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {confissoes.length > 1 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => removeConfissao(idx)}
-                      className="text-destructive hover:text-destructive shrink-0"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-
-              <Button type="button" variant="secondary" size="sm" onClick={addConfissao}>
-                <Plus className="h-4 w-4 mr-1" /> Adicionar horário
-              </Button>
-            </CardContent>
-            </Card>
+      {/* Main Content */}
+      <main className="flex-1 md:ml-64 p-8 md:p-12 max-w-7xl mx-auto w-full">
+        <header className="mb-12 border-b border-border pb-8">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+            <div>
+              <nav className="flex items-center gap-2 text-muted-foreground mb-4">
+                <span className="text-xs font-bold tracking-widest uppercase">Parishes</span>
+                <span className="material-symbols-outlined" style={{ fontSize: "16px" }}>chevron_right</span>
+                <span className="text-xs font-bold tracking-widest uppercase text-primary">New Registration</span>
+              </nav>
+              <h2 className="font-serif text-5xl font-semibold text-primary leading-tight tracking-tight">
+                Cadastro de Nova Paróquia
+              </h2>
+              <p className="text-muted-foreground max-w-2xl mt-2">
+                Insira as informações oficiais e horários litúrgicos para manter a comunidade informada sobre as atividades da diocese.
+              </p>
+            </div>
+            <div className="hidden md:flex gap-4 shrink-0">
+              <button
+                type="button"
+                onClick={() => router.push("/")}
+                className="px-6 py-3 text-xs font-bold tracking-widest uppercase border-2 border-secondary text-secondary hover:bg-secondary hover:text-white transition-all rounded-lg"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                form="church-form"
+                disabled={loading}
+                className="px-6 py-3 text-xs font-bold tracking-widest uppercase bg-primary text-white hover:bg-primary/90 transition-all rounded-lg shadow-sm disabled:opacity-50"
+              >
+                {loading ? "Salvando..." : "Salvar Cadastro"}
+              </button>
+            </div>
           </div>
+        </header>
 
-          {/* Submit */}
-          <div className="flex gap-3 pt-2">
-            <Button
+        <form id="church-form" onSubmit={handleSubmit} className="space-y-12">
+          {/* Dados da Igreja */}
+          <section className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            <div className="lg:col-span-1">
+              <h3 className="font-serif text-3xl font-medium text-foreground mb-2">Dados da Igreja</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Informações institucionais e de contato direto. Estes dados serão exibidos no perfil público da paróquia.
+              </p>
+            </div>
+            <div className="lg:col-span-2 space-y-6 bg-white p-8 rounded-xl shadow-sm border border-border">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[
+                  { label: "Nome da Paróquia *", field: "name" as const, placeholder: "Ex: Catedral Metropolitana de Londrina", type: "text", maxLength: 100 },
+                  { label: "CNPJ", field: "cnpj" as const, placeholder: "00.000.000/0000-00", type: "text", maxLength: 18 },
+                  { label: "E-mail para Contato", field: "email" as const, placeholder: "contato@paroquia.org.br", type: "email", maxLength: 100 },
+                  { label: "Telefone", field: "phone" as const, placeholder: "(43) 3000-0000", type: "tel", maxLength: 20 },
+                ].map(({ label, field, placeholder, type, maxLength }) => (
+                  <div key={field} className="flex flex-col gap-2">
+                    <label className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground">{label}</label>
+                    <input
+                      className="border border-border rounded px-4 py-3 text-base bg-background text-foreground"
+                      placeholder={placeholder} type={type} maxLength={maxLength}
+                      value={form[field]} onChange={setField(field)}
+                    />
+                  </div>
+                ))}
+                <div className="md:col-span-2 flex flex-col gap-2">
+                  <label className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground">URL do Logo (SVG/PNG)</label>
+                  <input
+                    className="border border-border rounded px-4 py-3 text-base bg-background text-foreground"
+                    placeholder="https://ecclesia.com/logos/paroquia-name.png" type="text" maxLength={500}
+                    value={form.logoUrl} onChange={setField("logoUrl")}
+                  />
+                </div>
+              </div>
+
+              {/* Endereço */}
+              <div className="border-t border-border pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="md:col-span-2 flex flex-col gap-2">
+                  <label className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground">Rua *</label>
+                  <input
+                    className="border border-border rounded px-4 py-3 text-base bg-background text-foreground"
+                    placeholder="Ex: Rua das Acácias" type="text" maxLength={200}
+                    value={form.street} onChange={setField("street")}
+                  />
+                </div>
+                {[
+                  { label: "Número *", field: "number" as const, placeholder: "120", type: "number" },
+                  { label: "Complemento", field: "complement" as const, placeholder: "Apto, bloco, sala...", type: "text", maxLength: 100 },
+                  { label: "Bairro *", field: "neighborhood" as const, placeholder: "Ex: Jardim Califórnia", type: "text", maxLength: 100 },
+                  { label: "Cidade *", field: "city" as const, placeholder: "Ex: Londrina", type: "text", maxLength: 100 },
+                  { label: "CEP", field: "postalCode" as const, placeholder: "00000-000", type: "text", maxLength: 9 },
+                ].map(({ label, field, placeholder, type, maxLength }) => (
+                  <div key={field} className="flex flex-col gap-2">
+                    <label className="text-[11px] font-bold tracking-widest uppercase text-muted-foreground">{label}</label>
+                    <input
+                      className="border border-border rounded px-4 py-3 text-base bg-background text-foreground"
+                      placeholder={placeholder} type={type} maxLength={maxLength}
+                      value={form[field]} onChange={setField(field)}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* Horários Litúrgicos */}
+          <section className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            <div className="lg:col-span-1">
+              <h3 className="font-serif text-3xl font-medium text-foreground mb-2">Horários Litúrgicos</h3>
+              <p className="text-muted-foreground text-sm leading-relaxed">
+                Organize os horários de missas, confissões e adorações. Adicione múltiplas entradas conforme a necessidade semanal.
+              </p>
+            </div>
+            <div className="lg:col-span-2 space-y-8">
+              <ScheduleSection
+                title="Missas" icon="auto_stories" colorClass="text-primary" borderClass="border-primary"
+                entries={massas}
+                onAdd={() => addEntry(setMassas)}
+                onUpdate={(i, patch) => updateEntry(setMassas, i, patch)}
+                onRemove={(i) => removeEntry(setMassas, i)}
+              />
+              <ScheduleSection
+                title="Confissões" icon="church" colorClass="text-secondary" borderClass="border-secondary"
+                entries={confissoes}
+                onAdd={() => addEntry(setConfissoes)}
+                onUpdate={(i, patch) => updateEntry(setConfissoes, i, patch)}
+                onRemove={(i) => removeEntry(setConfissoes, i)}
+              />
+              <ScheduleSection
+                title="Adorações" icon="satellite_alt" colorClass="text-muted-foreground" borderClass="border-muted-foreground"
+                entries={adoracoes}
+                onAdd={() => addEntry(setAdoracoes)}
+                onUpdate={(i, patch) => updateEntry(setAdoracoes, i, patch)}
+                onRemove={(i) => removeEntry(setAdoracoes, i)}
+              />
+            </div>
+          </section>
+
+          {/* Mobile actions */}
+          <footer className="flex md:hidden gap-4 pt-8 border-t border-border mt-12">
+            <button
               type="button"
-              variant="outline"
               onClick={() => router.push("/")}
-              className="flex-1"
+              className="flex-1 px-4 py-3 text-xs font-bold tracking-widest uppercase border-2 border-secondary text-secondary rounded-lg"
             >
               Cancelar
-            </Button>
-            <Button type="submit" className="flex-1">
-              Cadastrar Paróquia
-            </Button>
-          </div>
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-4 py-3 text-xs font-bold tracking-widest uppercase bg-primary text-white rounded-lg disabled:opacity-50"
+            >
+              {loading ? "Salvando..." : "Salvar"}
+            </button>
+          </footer>
         </form>
+
+        <footer className="w-full py-8 flex flex-col items-center justify-center gap-4 mt-24 border-t border-border">
+          <div className="font-serif text-lg font-semibold text-primary">Ecclesia</div>
+          <p className="text-muted-foreground text-sm text-center">
+            © {new Date().getFullYear()} Ecclesia Londrina. Sacred Heritage &amp; Digital Clarity.
+          </p>
+          <div className="flex flex-wrap justify-center gap-6">
+            {["Privacy Policy", "Terms of Service", "Contact Diocese", "Liturgical Calendar"].map((link) => (
+              <a key={link} href="#" className="text-[11px] font-bold tracking-widest uppercase text-border hover:text-primary underline transition-all">
+                {link}
+              </a>
+            ))}
+          </div>
+        </footer>
       </main>
     </div>
   );

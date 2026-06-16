@@ -9,7 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@nathanmgalante/n-js-utils": "^1.0.0",
+    "@nathanmgalante/n-js-utils": "^1.0.3",
+    "@radix-ui/react-label": "^2.1.8",
     "@radix-ui/react-select": "^2.2.6",
     "@radix-ui/react-toast": "^1.2.15",
     "class-variance-authority": "^0.7.1",

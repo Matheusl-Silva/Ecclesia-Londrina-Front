@@ -1,18 +1,12 @@
 'use client'
 
 import { ScheduleList } from "@/services/schedule/types";
-import moment from 'moment';
+import { convertNumberToWeekDay } from "@/lib/dateUtils";
 
 interface ScheduleTableProps {
     title: string;
     items: ScheduleList;
     isLoading?: boolean;
-}
-
-const convertNumberToWeekDay = (day: number) => {
-    moment.locale('pt-br');
-    const dayName = moment().day(day).format('dddd');
-    return dayName.charAt(0).toUpperCase() + dayName.slice(1);
 }
 
 const ScheduleTable = ({ title, items, isLoading = false }: ScheduleTableProps) => {

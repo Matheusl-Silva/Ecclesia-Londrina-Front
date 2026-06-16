@@ -14,3 +14,17 @@ export interface Church {
 }
 
 export type ChurchList = Church[];
+
+export interface CreateChurchPayload {
+    name: string;
+    cnpj?: string;
+    email?: string;
+    phone?: string;
+    logoUrl?: string;
+    street: string;
+    number: number;
+    complement?: string;
+    neighborhood: string;
+    postalCode: string;
+    city: string;
+}
